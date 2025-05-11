@@ -24,6 +24,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Menu, X, User, Bookmark, LogOut, Star } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useAuth } from "@/app/provider/AuthContext"
+import { toast } from "sonner"
 
 const categories = [
   {
@@ -46,8 +48,12 @@ const categories = [
 
 export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const isLoggedIn = true // Giả định người dùng đã đăng nhập
-
+  const { user,logout } = useAuth()
+  const hanleLogout = () => {
+    logout()
+    toast.success("Đăng xuất thành công")
+  }
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background flex justify-center">
       <div className="container flex h-16 items-center">
@@ -141,13 +147,12 @@ export default function Header() {
             </Button>
           )}
 
-          {isLoggedIn ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Avatar" />
-                    <AvatarFallback>NA</AvatarFallback>
+                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -173,7 +178,7 @@ export default function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center cursor-pointer">
+                <DropdownMenuItem onClick={hanleLogout} className="flex items-center cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Đăng xuất</span>
                 </DropdownMenuItem>

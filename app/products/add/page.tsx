@@ -14,23 +14,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, Upload, Info } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { addProduct } from "@/lib/api"
 
-// Danh mục sản phẩm mẫu
-const categories = [
-  { value: "dien-thoai", label: "Điện thoại" },
-  { value: "may-tinh-bang", label: "Máy tính bảng" },
-  { value: "laptop", label: "Laptop" },
-  { value: "may-tinh-de-ban", label: "Máy tính để bàn" },
-  { value: "may-anh", label: "Máy ảnh" },
-  { value: "am-thanh", label: "Âm thanh" },
-  { value: "tv", label: "TV" },
-  { value: "thiet-bi-thong-minh", label: "Thiết bị thông minh" },
-  { value: "tu-lanh", label: "Tủ lạnh" },
-  { value: "may-giat", label: "Máy giặt" },
-  { value: "dieu-hoa", label: "Điều hòa" },
-  { value: "gia-dung-khac", label: "Gia dụng khác" },
-]
+import {  useQuery } from "@tanstack/react-query"
+import { getAllCategories } from "@/services/category-service"
+import { useEffect } from "react"
+import { addProduct } from "@/services/product-service"
+import { toast } from "sonner"
+import { useAuth } from "@/app/provider/AuthContext"
+import { handleErrorApi } from "@/lib/utils"
+
+
 
 interface Specification {
   id: string
@@ -46,6 +39,7 @@ interface ProductImage {
 
 export default function AddProductPage() {
   const router = useRouter()
+  const {user} = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("thong-tin")
   const [showPreview, setShowPreview] = useState(false)
@@ -59,9 +53,25 @@ export default function AddProductPage() {
   const [images, setImages] = useState<ProductImage[]>([
     { id: "1", file: null, preview: "/placeholder.svg?height=200&width=200" },
   ])
+  const [categories, setCategories] = useState([])
+  
+  const query = useQuery({ queryKey: ['categories'], queryFn: getAllCategories })
+
+  useEffect(() => {
+    if (query.data) {
+      console.log("query.data", query.data);
+      let categories = query.data.categories.map((category: any) => ({
+        value: category.id,
+        label: category.name,
+      }))
+      
+      setCategories(categories)
+    }
+  }, [query.data])
 
   // Thông báo lỗi
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
 
   // Thêm thông số kỹ thuật mới
   const addSpecification = () => {
@@ -104,10 +114,10 @@ export default function AddProductPage() {
           images.map((img) =>
             img.id === id
               ? {
-                  ...img,
-                  file: file,
-                  preview: event.target?.result as string,
-                }
+                ...img,
+                file: file,
+                preview: event.target?.result as string,
+              }
               : img,
           ),
         )
@@ -116,7 +126,7 @@ export default function AddProductPage() {
       reader.readAsDataURL(file)
     }
   }
-
+  
   // Kiểm tra form
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
@@ -156,33 +166,31 @@ export default function AddProductPage() {
 
     setIsSubmitting(true)
 
-    // Tạo đối tượng FormData để gửi dữ liệu và file
-    const formData = new FormData()
-    formData.append("name", productName)
-    formData.append("category", category)
-    formData.append("price", price)
-    formData.append("description", description)
-    formData.append("specifications", JSON.stringify(specifications))
-
-    // Thêm các file hình ảnh
-    images.forEach((img, index) => {
-      if (img.file) {
-        formData.append(`image_${index}`, img.file)
-      }
-    })
 
     try {
       // Gọi API thêm sản phẩm
-      const result = await addProduct(formData)
-
+      const result = await addProduct({
+        name: productName,
+        price: price,
+        category_id: category,
+        description: description,
+        images: images.map((img) => img.file as File),
+        spec_name: specifications.map((spec) => spec.name),
+        spec_value: specifications.map((spec) => spec.value),
+        token: user?.token as string,
+      })
+      toast.success("Thêm sản phẩm thành công")
       // Chuyển hướng sau khi thành công
       router.push("/products")
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm:", error)
+      toast.error("Đã xảy ra lỗi khi thêm sản phẩm")
+      handleErrorApi(error)
     } finally {
       setIsSubmitting(false)
     }
   }
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -228,7 +236,7 @@ export default function AddProductPage() {
                         <SelectValue placeholder="Chọn danh mục sản phẩm" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((cat) => (
+                        {categories && categories.map((cat: any) => (
                           <SelectItem key={cat.value} value={cat.value}>
                             {cat.label}
                           </SelectItem>
@@ -464,7 +472,7 @@ export default function AddProductPage() {
                       </div>
                       <div>
                         <div className="mb-2">
-                          <Badge>{categories.find((cat) => cat.value === category)?.label || "Danh mục"}</Badge>
+                          <Badge>{ "Danh mục"}</Badge>
                         </div>
                         <h2 className="text-2xl font-bold mb-2">{productName || "Tên sản phẩm"}</h2>
                         <p className="text-xl font-semibold text-primary mb-4">{price || "Giá sản phẩm"}</p>

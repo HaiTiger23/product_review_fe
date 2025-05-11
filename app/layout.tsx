@@ -5,13 +5,18 @@ import "./globals.css"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { AuthProvider } from "./provider/AuthContext"
+import { AnimatePresence, motion } from 'framer-motion'
+import ReactQueryProvider from "@/app/provider/ReactQueryProvider"
+
+
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Hệ Thống Đánh Giá Sản Phẩm",
   description: "Hệ thống đánh giá sản phẩm tiêu dùng",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -23,12 +28,22 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <Toaster />
           <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            <AuthProvider>
+              <ReactQueryProvider>
+              <Header />
+              <main className="flex-1">
+
+                {children}
+
+              </main>
+              <Footer />
+            </ReactQueryProvider>
+            </AuthProvider>
           </div>
         </ThemeProvider>
+       
       </body>
     </html>
   )

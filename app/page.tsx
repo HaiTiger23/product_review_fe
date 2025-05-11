@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
 export default function Home() {
+  
   return (
     <div className="container mx-auto px-4 py-12">
       <section className="py-12 md:py-24 lg:py-32 xl:py-48">
@@ -17,12 +18,10 @@ export default function Home() {
               </p>
             </div>
             <div className="space-x-4">
-              <Button asChild>
-                <Link href="/login">Đăng nhập</Link>
-              </Button>
+           
               <Button asChild variant="outline">
                 <Link href="/products">
-                  Xem sản phẩm <ArrowRight className="ml-2 h-4 w-4" />
+                  Xem danh sách sản phẩm <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>

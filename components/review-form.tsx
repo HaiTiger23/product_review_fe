@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Star } from "lucide-react"
-import { addReview } from "@/lib/api"
+import { addReview } from "@/services/review-service"
+
 
 interface ReviewFormProps {
   productId: string
@@ -18,6 +19,7 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
   const [hover, setHover] = useState<number>(0)
   const [comment, setComment] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [userReview, setUserReview] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,10 +36,10 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
         rating,
         content: comment,
       })
-
       // Reset form sau khi gửi thành công
       setRating(0)
       setComment("")
+      setUserReview(result.data)
       alert("Đánh giá của bạn đã được gửi thành công!")
     } catch (error) {
       console.error("Lỗi khi gửi đánh giá:", error)
@@ -51,6 +53,15 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="rating">Đánh giá của bạn</Label>
+        {userReview && (
+          <div className="flex items-center gap-1">
+            <Star
+              className={`h-8 w-8 fill-yellow-400 text-yellow-400`}
+            />
+            <span className="ml-2 text-sm text-muted-foreground">{userReview.rating} sao</span>
+          </div>
+        )}
+        {!userReview && (
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
@@ -69,6 +80,7 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
           ))}
           <span className="ml-2 text-sm text-muted-foreground">{rating > 0 ? `${rating} sao` : "Chưa đánh giá"}</span>
         </div>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="comment">Nhận xét của bạn</Label>
