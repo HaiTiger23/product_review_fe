@@ -27,28 +27,29 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/app/provider/AuthContext"
 import { toast } from "sonner"
 
-const categories = [
-  {
-    title: "Điện thoại & Máy tính bảng",
-    items: ["Điện thoại", "Máy tính bảng", "Phụ kiện"],
-  },
-  {
-    title: "Máy tính & Laptop",
-    items: ["Laptop", "Máy tính để bàn", "Linh kiện", "Màn hình"],
-  },
-  {
-    title: "Thiết bị điện tử",
-    items: ["Máy ảnh", "Âm thanh", "TV", "Thiết bị thông minh"],
-  },
-  {
-    title: "Gia dụng",
-    items: ["Tủ lạnh", "Máy giặt", "Điều hòa", "Nồi cơm điện"],
-  },
-]
+// const categories = [
+//   {
+//     title: "Điện thoại & Máy tính bảng",
+//     items: ["Điện thoại", "Máy tính bảng", "Phụ kiện"],
+//   },
+//   {
+//     title: "Máy tính & Laptop",
+//     items: ["Laptop", "Máy tính để bàn", "Linh kiện", "Màn hình"],
+//   },
+//   {
+//     title: "Thiết bị điện tử",
+//     items: ["Máy ảnh", "Âm thanh", "TV", "Thiết bị thông minh"],
+//   },
+//   {
+//     title: "Gia dụng",
+//     items: ["Tủ lạnh", "Máy giặt", "Điều hòa", "Nồi cơm điện"],
+//   },
+// ]
 
 export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const { user,logout } = useAuth()
+  
+  const { user,logout,categories } = useAuth()
   const hanleLogout = () => {
     logout()
     toast.success("Đăng xuất thành công")
@@ -73,19 +74,20 @@ export default function Header() {
                 Sản phẩm
               </Link>
               {categories.map((category) => (
-                <div key={category.title} className="py-2">
-                  <h3 className="font-medium mb-1">{category.title}</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {category.items.map((item) => (
+                <div key={category.id} className="py-2">
+                  <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="block py-2 text-lg font-medium">{category.name}</Link>
+                 
+                  {/* <div className="grid grid-cols-2 gap-2">
+                    {category.children.map((item) => (
                       <Link
-                        key={item}
-                        href={`/products?category=${encodeURIComponent(item)}`}
+                        key={item.id}
+                        href={`/products?category=${encodeURIComponent(item.name)}`}
                         className="text-sm text-muted-foreground hover:text-foreground"
                       >
                         {item}
                       </Link>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </nav>
@@ -108,20 +110,20 @@ export default function Header() {
               <NavigationMenuContent>
                 <div className="grid w-[600px] grid-cols-2 p-4 gap-3">
                   {categories.map((category) => (
-                    <div key={category.title} className="space-y-2">
-                      <h3 className="font-medium">{category.title}</h3>
-                      <ul className="space-y-1">
-                        {category.items.map((item) => (
-                          <li key={item}>
+                    <div key={category.id} className="space-y-2">
+                      <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="block py-2 text-lg font-medium">{category.name}</Link>
+                      {/* <ul className="space-y-1">
+                        {category.children.map((item) => (
+                          <li key={item.id}>
                             <Link
-                              href={`/products?category=${encodeURIComponent(item)}`}
+                              href={`/products?category=${encodeURIComponent(item.name)}`}
                               className="text-sm text-muted-foreground hover:text-foreground"
                             >
-                              {item}
+                              {item.name}
                             </Link>
                           </li>
                         ))}
-                      </ul>
+                      </ul> */}
                     </div>
                   ))}
                 </div>

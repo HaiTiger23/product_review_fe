@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Star } from "lucide-react"
 import { addReview } from "@/services/review-service"
+import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query"
 
 
 interface ReviewFormProps {
@@ -20,11 +22,12 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
   const [comment, setComment] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [userReview, setUserReview] = useState<any>(null)
+  const queryClient = useQueryClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (rating === 0) {
-      alert("Vui lòng chọn số sao đánh giá")
+      toast.warning("Vui lòng chọn số sao đánh giá")
       return
     }
 
@@ -40,10 +43,12 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
       setRating(0)
       setComment("")
       setUserReview(result.data)
-      alert("Đánh giá của bạn đã được gửi thành công!")
+      toast.success("Đánh giá của bạn đã được gửi thành công!")
+      queryClient.invalidateQueries({ queryKey: ["reviews", productId] })
+      queryClient.invalidateQueries({ queryKey: ["product", productId] })
     } catch (error) {
       console.error("Lỗi khi gửi đánh giá:", error)
-      alert("Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại sau.")
+      toast.error("Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại sau.")
     } finally {
       setIsSubmitting(false)
     }
@@ -62,40 +67,50 @@ export default function ReviewForm({ productId }: ReviewFormProps) {
           </div>
         )}
         {!userReview && (
-        <div className="flex items-center gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => setRating(star)}
-              onMouseEnter={() => setHover(star)}
-              onMouseLeave={() => setHover(0)}
-              className="focus:outline-none"
-            >
-              <Star
-                className={`h-8 w-8 ${star <= (hover || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-              />
-              <span className="sr-only">{star} sao</span>
-            </button>
-          ))}
-          <span className="ml-2 text-sm text-muted-foreground">{rating > 0 ? `${rating} sao` : "Chưa đánh giá"}</span>
-        </div>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHover(star)}
+                onMouseLeave={() => setHover(0)}
+                className="focus:outline-none"
+              >
+                <Star
+                  className={`h-8 w-8 ${star <= (hover || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                />
+                <span className="sr-only">{star} sao</span>
+              </button>
+            ))}
+            <span className="ml-2 text-sm text-muted-foreground">{rating > 0 ? `${rating} sao` : "Chưa đánh giá"}</span>
+          </div>
         )}
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="comment">Nhận xét của bạn</Label>
-        <Textarea
-          id="comment"
-          placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          rows={5}
-          required
-        />
-      </div>
-      <Button type="submit" disabled={isSubmitting || rating === 0}>
-        {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
-      </Button>
+      {userReview && (
+        <div className="flex items-center gap-1">
+          <p className="text-sm text-muted-foreground">Bạn đã đánh giá sản phẩm này</p>
+          <p>{userReview.content}</p>
+        </div>
+      )}
+      {!userReview && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="comment">Nhận xét của bạn</Label>
+            <Textarea
+              id="comment"
+              placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={5}
+              required
+            />
+          </div>
+          <Button type="submit" disabled={isSubmitting || rating === 0}>
+            {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
+          </  Button>
+        </>
+      )}
     </form>
   )
 }

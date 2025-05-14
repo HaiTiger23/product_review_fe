@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,12 +10,27 @@ import { Bookmark, Star, ThumbsUp, MessageSquare, Loader2 } from "lucide-react"
 import Image from "next/image"
 import ReviewForm from "@/components/review-form"
 
-import { getProductById } from "@/services/product-service"
+import { addBookmark, getProductById } from "@/services/product-service"
 import React from "react"
 import { Product } from "../page"
 import { getImgSrc } from "@/lib/utils"
 import { getProductReviews, markReviewHelpful } from "@/services/review-service"
 import { useAuth } from "@/app/provider/AuthContext"
+import { toast } from "sonner"
+
+// Kiểu dữ liệu cho response từ API
+interface ProductDetailResponse {
+  product: ProductDetail;
+}
+
+interface ReviewsResponse {
+  data: {
+    reviews: any[];
+    pagination: {
+      totalPages: number;
+    }
+  }
+}
 
 export interface ProductDetail {
   id: number;
@@ -25,6 +41,8 @@ export interface ProductDetail {
   price: string;
   reviewCount: number;
   images?: string[];
+  isReviewed: boolean;
+  isBookmarked: boolean;
   specs?: string[];
 }
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,35 +51,56 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [reviews, setReviews] = useState<any[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  // Doraemon thêm state cho modal full màn hình ảnh nè!
+  const [showFullImage, setShowFullImage] = useState(false);
+  const [fullImageSrc, setFullImageSrc] = useState("");
 
   const {user} = useAuth()
 
+  // --- Dùng useQuery để lấy dữ liệu sản phẩm ---
+  const {
+    data: productData,
+    isLoading: isProductLoading,
+    error: productError
+  } = useQuery<ProductDetailResponse>({
+    queryKey: ["product", resolvedParams.id],
+    queryFn: () => getProductById(resolvedParams.id),
+    staleTime: 1000 * 60
+  });
+
+  // Xử lý dữ liệu product khi có kết quả
   useEffect(() => {
-    const fetchProductData = async () => {
-      setIsLoading(true)
-      try {
-
-        const productData = await getProductById(resolvedParams.id)
-        console.log(productData);
-        
-          setProduct(productData.product as ProductDetail)
-
-        const reviewsData = await getProductReviews(resolvedParams.id, { page: 1, limit: 3, sort: "helpful_desc" })
-        console.log(reviewsData);
-        
-        setReviews(reviewsData.data.reviews)
-        setTotalPages(reviewsData.data.pagination.totalPages)
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (productData?.product) {
+      setProduct(productData.product as ProductDetail);
+      setSelectedImage(productData.product.images?.[0] || null);
     }
+  }, [productData]);
 
-    fetchProductData()
-  }, [resolvedParams.id])
+  // --- Dùng useQuery để lấy reviews ---
+  const {
+    data: reviewsData,
+    isLoading: isReviewsLoading,
+    error: reviewsError
+  } = useQuery<ReviewsResponse>({
+    queryKey: ["reviews", resolvedParams.id, currentPage],
+    queryFn: () => getProductReviews(resolvedParams.id, { page: currentPage, limit: 3, sort: "helpful_desc" }),
+    staleTime: 1000 * 60,
+    enabled: !!productData
+  });
+
+  // Xử lý dữ liệu reviews khi có kết quả
+  useEffect(() => {
+    if (reviewsData?.data) {
+      setReviews(reviewsData.data.reviews);
+      setTotalPages(reviewsData.data.pagination.totalPages);
+    }
+  }, [reviewsData]);
+
+  // --- Loading tổng hợp ---
+  const isLoading = isProductLoading || isReviewsLoading;
 
   const handleLoadMoreReviews = async () => {
     if (currentPage >= totalPages) return
@@ -70,13 +109,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     try {
       const nextPage = currentPage + 1
       const reviewsData = await getProductReviews(resolvedParams.id, { page: nextPage, limit: 3 })
-
       setReviews([...reviews, ...reviewsData.data.reviews])
       setCurrentPage(nextPage)
     } catch (error) {
       console.error("Lỗi khi tải thêm đánh giá:", error)
+      toast.error("Lỗi khi tải thêm đánh giá")
     } finally {
       setIsLoadingMore(false)
+    }
+  }
+
+  const handleAddBookmark = async () => {
+    try {
+      await addBookmark(resolvedParams.id)
+      toast.success("Đã thêm sản phẩm vào danh sách đã lưu")
+      setIsBookmarked(true)
+    } catch (error: any) {
+      console.log(error)
+      if(error.response?.data?.error) {
+        toast.error(error.response.data.error)
+        return;
+      }
+      console.error("Lỗi khi lưu sản phẩm:", error)
+      toast.error("Lỗi khi lưu sản phẩm")
     }
   }
 
@@ -100,16 +155,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     try {
       const review = reviews.find((review) => review.id === reviewId)
       if(review?.isHelpful) {
-        alert("Bạn đã đánh dấu đánh giá này là hữu ích");
+        toast.warning("Bạn đã đánh dấu đánh giá này là hữu ích");
         return;
       }
-      await markReviewHelpful(reviewId, helpful)
+      const response =await markReviewHelpful(reviewId, helpful)
+      if(response.data?.error) {
+        toast.error("Lỗi: "+response.data.error)
+        return;
+      }
       const updatedReviews = reviews.map((review) =>
         review.id === reviewId ? { ...review, helpfulCount: review.helpfulCount + (helpful ? 1 : -1), isHelpful: true } : review
       )
       setReviews(updatedReviews)
+      
+      toast.success("Đánh giá hữu ích thành công");
     } catch (error) {
       console.error("Lỗi khi đánh dấu đánh giá hữu ích:", error)
+      toast.error("Đánh dấu đánh giá hữu ích thất bại");
     }
   }
 
@@ -120,18 +182,47 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
             <div className="flex justify-center mb-6">
               <Image
-                src={product.images ? getImgSrc(product.images[0]) : "/placeholder.svg"}
+                src={selectedImage ? getImgSrc(selectedImage) : getImgSrc(product.images?.[0] || "")}
                 alt={product.name}
                 width={400}
                 height={400}
-                className="object-contain"
+                className="object-contain cursor-pointer"
+                onClick={() => {
+                  const imgSrc = selectedImage ? getImgSrc(selectedImage) : getImgSrc(product.images?.[0] || "");
+                  setFullImageSrc(imgSrc);
+                  setShowFullImage(true);
+                }}
               />
+
+      {/* Doraemon modal full màn hình ảnh nè! */}
+      {showFullImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+          onClick={() => setShowFullImage(false)}
+        >
+          <img
+            src={fullImageSrc}
+            alt="Full"
+            className="max-w-full max-h-full rounded-lg shadow-lg"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            className="absolute top-4 right-4 text-white text-3xl font-bold"
+            onClick={() => setShowFullImage(false)}
+          >
+            &times;
+          </button>
+        </div>
+      )}
             </div>
             <div className="grid grid-cols-4 gap-2">
               {product.images?.map((image, i) => (
                 <div key={i} className="border rounded-md p-2 cursor-pointer hover:border-primary">
                   <Image
                     src={getImgSrc(image)}
+                    onClick={() => {
+                      setSelectedImage(image)
+                    }}
                     alt={`${product.name} - Ảnh ${i}`}
                     width={80}
                     height={80}
@@ -168,21 +259,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex gap-4 mb-6">
               {/* <Button className="flex-1">Mua ngay</Button> */}
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={async () => {
-                  try {
-                    // Trong môi trường thực tế, sẽ gọi API
-                    // await addBookmark(productData.id);
-                    alert("Đã thêm sản phẩm vào danh sách đã lưu")
-                  } catch (error) {
-                    console.error("Lỗi khi lưu sản phẩm:", error)
-                  }
-                }}
-              >
-                <Bookmark className="mr-2 h-4 w-4" /> Lưu sản phẩm
-              </Button>
+              
+                {isBookmarked || productData?.product.isBookmarked ? (
+                  <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleAddBookmark()}
+                >
+                  <Bookmark className="mr-2 h-4 w-4 text-blue-500 fill-blue-500" /> Đã lưu
+                </Button>
+                ) : (
+                  <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleAddBookmark()}
+                >
+                  <Bookmark className="mr-2 h-4 w-4" /> Lưu sản phẩm
+                </Button>
+                )}
             </div>
           </div>
 
@@ -191,9 +285,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <TabsTrigger value="reviews" className="flex-1">
                 Đánh giá ({product.reviewCount})
               </TabsTrigger>
-              <TabsTrigger value="write-review" className="flex-1">
-                Viết đánh giá
-              </TabsTrigger>
+              {user && !productData?.product.isReviewed && (
+                <TabsTrigger value="write-review" className="flex-1">
+                  Viết đánh giá
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="reviews" className="pt-4">
               <div className="space-y-4">
@@ -234,17 +330,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         className="text-muted-foreground"
                         onClick={async () => {
                           try {
-                          
-                            // Trong môi trường thực tế, sẽ gọi API
                             await handleMarkReviewHelpful(review.id, true);
-                           
                           } catch (error) {
                             console.error("Lỗi khi đánh dấu đánh giá:", error)
                           }
                         }}
                       >
-                        
-                        <ThumbsUp className="mr-1 h-4 w-4" /> Hữu ích ({review.helpfulCount})
+                        {review.isHelpful ? (
+                          <ThumbsUp className="mr-1 h-4 w-4 fill-blue-500 text-blue-500" />
+                        ) : (
+                          <ThumbsUp className="mr-1 h-4 w-4" />
+                        )}
+                        Hữu ích ({review.helpfulCount})
                       </Button>
                       {user?.id !== review.user.id && (
                         <Button variant="ghost" size="sm" className="text-muted-foreground">

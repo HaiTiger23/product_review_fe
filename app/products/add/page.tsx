@@ -69,6 +69,12 @@ export default function AddProductPage() {
     }
   }, [query.data])
 
+  useEffect(() => {
+    if (!user) {
+      router.push("/login")
+    }
+  }, [user])
+
   // Thông báo lỗi
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
@@ -143,6 +149,9 @@ export default function AddProductPage() {
     // Kiểm tra hình ảnh
     const hasNoImage = images.every((img) => img.file === null)
     if (hasNoImage) newErrors.images = "Vui lòng tải lên ít nhất một hình ảnh sản phẩm"
+
+    const hasInvalidImage = images.some((img) => img.file && !["image/jpeg", "image/jpg"].includes(img.file.type))
+    if (hasInvalidImage) newErrors.images = "Vui lòng tải lên hình ảnh có định dạng .jpg, .jpeg"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0

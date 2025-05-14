@@ -8,4 +8,8 @@ export function register(payload: {name: string, email: string, password: string
 export function login(payload: {email: string, password: string}) {
     return api.post(routerApi.auth.login, payload)
 }
+
+export async function  getUser() {
+    return await api.get(routerApi.auth.getCurrentUser);
+}
     

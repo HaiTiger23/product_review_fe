@@ -9,6 +9,7 @@ export const routerApi = {
         getAll: "api/products",
         add: "api/products",
         getById: "api/products/:id",
+        bookmark: "api/products/bookmark/:productId",
     },
     review: {
         add: "api/product-reviews/:productId",

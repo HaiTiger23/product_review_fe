@@ -11,6 +11,7 @@ import { getAllProducts } from "@/services/product-service"
 import { useState,useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getImgSrc } from "@/lib/utils"
+import { useAuth } from "../provider/AuthContext"
 
 export interface Product {
   id: number;
@@ -81,6 +82,7 @@ export interface Product {
 
 export default function ProductsPage() {
   const queryClient = useQueryClient()
+  const {user} = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const query = useQuery({ queryKey: ['products'], queryFn: () => getAllProducts({search: searchQuery}) })
@@ -107,7 +109,7 @@ export default function ProductsPage() {
             <Input type="search" placeholder="Tìm kiếm sản phẩm..." className="w-full pl-8" onChange={handleSearch} />
           </div>
           <Button asChild>
-            <Link href="/products/add">
+            <Link href={user ? "/products/add" : "/login"}>
               <Plus className="mr-2 h-4 w-4" /> Thêm sản phẩm
             </Link>
           </Button>

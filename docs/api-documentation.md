@@ -429,7 +429,7 @@ Authorization: Bearer <token>
 
 ### Thêm sản phẩm vào bookmark
 
-- **URL**: `/products/:productId/bookmark`
+- **URL**: `/products/bookmark/:productId`
 - **Method**: `POST`
 - **Yêu cầu xác thực**: Có
 - **Phản hồi thành công**:
