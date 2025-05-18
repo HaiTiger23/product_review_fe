@@ -76,3 +76,7 @@ export const getAllProducts = async ({
     const response = await api.post(routerApi.product.bookmark.replace(":productId", String(productId)))
     return response.data
   }
+  export const getBookmarkByUser = async () => {
+    const response = await api.get(routerApi.product.bookmarkByUser)
+    return response.data
+  }

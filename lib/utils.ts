@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 export function handleErrorApi(error: any) {
-  const desc = error?.response?.data?.message || "";
+  const desc = error?.response?.data?.message || error?.response?.data?.error;
   switch (error?.status) {
     case 401:
       toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", { description: desc });

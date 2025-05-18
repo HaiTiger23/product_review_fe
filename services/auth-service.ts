@@ -12,4 +12,8 @@ export function login(payload: {email: string, password: string}) {
 export async function  getUser() {
     return await api.get(routerApi.auth.getCurrentUser);
 }
+
+export async function updateUserProfile(payload: {name: string, password: string, confirmPassword: string}) {
+    return await api.post(routerApi.auth.updateUserProfile, payload);
+}
     

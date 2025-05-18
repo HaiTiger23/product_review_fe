@@ -58,7 +58,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [showFullImage, setShowFullImage] = useState(false);
   const [fullImageSrc, setFullImageSrc] = useState("");
 
-  const {user} = useAuth()
+  const { user } = useAuth()
 
   // --- Dùng useQuery để lấy dữ liệu sản phẩm ---
   const {
@@ -121,12 +121,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleAddBookmark = async () => {
     try {
-      await addBookmark(resolvedParams.id)
-      toast.success("Đã thêm sản phẩm vào danh sách đã lưu")
-      setIsBookmarked(true)
+      let response = await addBookmark(resolvedParams.id)
+
+      if (response.status == 1) {
+        setIsBookmarked(true)
+      }
+      if (response.status == 2) {
+        setIsBookmarked(false)
+      }
+      toast.success(response.message)
+
     } catch (error: any) {
       console.log(error)
-      if(error.response?.data?.error) {
+      if (error.response?.data?.error) {
         toast.error(error.response.data.error)
         return;
       }
@@ -154,20 +161,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const handleMarkReviewHelpful = async (reviewId: string | number, helpful: boolean) => {
     try {
       const review = reviews.find((review) => review.id === reviewId)
-      if(review?.isHelpful) {
+      if (review?.isHelpful) {
         toast.warning("Bạn đã đánh dấu đánh giá này là hữu ích");
         return;
       }
-      const response =await markReviewHelpful(reviewId, helpful)
-      if(response.data?.error) {
-        toast.error("Lỗi: "+response.data.error)
+      const response = await markReviewHelpful(reviewId, helpful)
+      if (response.data?.error) {
+        toast.error("Lỗi: " + response.data.error)
         return;
       }
       const updatedReviews = reviews.map((review) =>
         review.id === reviewId ? { ...review, helpfulCount: review.helpfulCount + (helpful ? 1 : -1), isHelpful: true } : review
       )
       setReviews(updatedReviews)
-      
+
       toast.success("Đánh giá hữu ích thành công");
     } catch (error) {
       console.error("Lỗi khi đánh dấu đánh giá hữu ích:", error)
@@ -194,26 +201,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 }}
               />
 
-      {/* Doraemon modal full màn hình ảnh nè! */}
-      {showFullImage && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
-          onClick={() => setShowFullImage(false)}
-        >
-          <img
-            src={fullImageSrc}
-            alt="Full"
-            className="max-w-full max-h-full rounded-lg shadow-lg"
-            onClick={e => e.stopPropagation()}
-          />
-          <button
-            className="absolute top-4 right-4 text-white text-3xl font-bold"
-            onClick={() => setShowFullImage(false)}
-          >
-            &times;
-          </button>
-        </div>
-      )}
+              {/* Doraemon modal full màn hình ảnh nè! */}
+              {showFullImage && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+                  onClick={() => setShowFullImage(false)}
+                >
+                  <img
+                    src={fullImageSrc}
+                    alt="Full"
+                    className="max-w-full max-h-full rounded-lg shadow-lg"
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <button
+                    className="absolute top-4 right-4 text-white text-3xl font-bold"
+                    onClick={() => setShowFullImage(false)}
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-4 gap-2">
               {product.images?.map((image, i) => (
@@ -259,24 +266,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex gap-4 mb-6">
               {/* <Button className="flex-1">Mua ngay</Button> */}
-              
-                {isBookmarked || productData?.product.isBookmarked ? (
-                  <Button
+
+              {isBookmarked || productData?.product.isBookmarked ? (
+                <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => handleAddBookmark()}
                 >
                   <Bookmark className="mr-2 h-4 w-4 text-blue-500 fill-blue-500" /> Đã lưu
                 </Button>
-                ) : (
-                  <Button
+              ) : (
+                <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => handleAddBookmark()}
                 >
                   <Bookmark className="mr-2 h-4 w-4" /> Lưu sản phẩm
                 </Button>
-                )}
+              )}
             </div>
           </div>
 

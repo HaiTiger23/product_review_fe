@@ -20,6 +20,21 @@ export const getProductReviews = async (
     return api.get(routerApi.review.get.replace(":productId", String(productId)), { params })
 }
 
+export const getReviewByUser = async () => {
+    return api.get(routerApi.review.getByUser)
+}
+
+export const updateReview = async (reviewId: string | number, reviewData: {
+    rating: number
+    content: string
+}) => {
+    return api.post(routerApi.review.update.replace(":reviewId", String(reviewId)), reviewData)
+}
+
 export const markReviewHelpful = async (reviewId: string | number, helpful: boolean) => {
     return api.post(routerApi.review.markHelpful.replace(":reviewId", String(reviewId)), { helpful })
+}
+
+export const deleteReview = async (reviewId: string | number) => {
+    return api.delete(routerApi.review.delete.replace(":reviewId", String(reviewId)))
 }

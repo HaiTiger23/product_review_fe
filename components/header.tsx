@@ -47,7 +47,6 @@ import { toast } from "sonner"
 // ]
 
 export default function Header() {
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   
   const { user,logout,categories } = useAuth()
   const hanleLogout = () => {
@@ -133,21 +132,7 @@ export default function Header() {
         </NavigationMenu>
 
         <div className="flex items-center ml-auto gap-2">
-          {isSearchOpen ? (
-            <div className="relative flex items-center">
-              <Input type="search" placeholder="Tìm kiếm..." className="w-full md:w-[300px] pl-8" />
-              <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)} className="absolute right-0">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Đóng tìm kiếm</span>
-              </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="hidden md:flex">
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Tìm kiếm</span>
-            </Button>
-          )}
+         
 
           {user ? (
             <DropdownMenu>
